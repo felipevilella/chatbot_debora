@@ -201,7 +201,7 @@ class WhatsappBot:
             naoConclusaoQuiz = round(float(100 * int(quantQuizNaoCompletados) / int(quantPessoas)),2)
 
         mensagemRelatorio.append(nome + ", vamos lá para o resultado final do questionário:")
-        mensagemRelatorio.append("A porcentagem de aluno que concluiu o questionario foi de "+ str(ConclusaoQuiz)+"% e as que não concluiu foi de "+ str(naoConclusaoQuiz)+"%")
+        mensagemRelatorio.append("A porcentagem de aluno que concluiu o quiz foi de "+ str(ConclusaoQuiz)+"% e as que não concluiu foi de "+ str(naoConclusaoQuiz)+"%")
         
         for numero in questoes:
             
