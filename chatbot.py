@@ -165,9 +165,20 @@ class WhatsappBot:
         alunos = firebase.getAlunos()
 
         quantRespostaPergunta = ["", 0 , 0, 0]
+        quantQuizCompletados = 0
+        quantQuizNaoCompletados = 0
+        quantPessoas = 0
         mensagemRelatorio = []
 
         for key in alunos:
+
+            # obter o total de respostas respondidas
+            if alunos[key]['pergunta_1'] != 'Não realizado' and alunos[key]['pergunta_2'] != 'Não realizado' and alunos[key]['pergunta_3'] != 'Não realizado':
+                quantQuizCompletados = quantQuizCompletados + 1
+            else: 
+                quantQuizNaoCompletados = quantQuizNaoCompletados + 1
+
+            # obter a quantidade de respostas por questão
             if alunos[key]['pergunta_1'] != 'Não realizado':
                 quantRespostaPergunta[1] = quantRespostaPergunta[1] + 1
             if alunos[key]['pergunta_2'] != 'Não realizado':
@@ -175,22 +186,34 @@ class WhatsappBot:
             if alunos[key]['pergunta_3'] != 'Não realizado':
                 quantRespostaPergunta[3] = quantRespostaPergunta[3] + 1
 
+            quantPessoas = quantPessoas + 1
+            
+        
         respostas = firebase.getRespostas()
         questoes = [1,2,3]
 
-        mensagemRelatorio.append(nome + ", vamos lá para o resultado final do questionário:")
+        # porcentagem de pessoas que concluiram e não concluiram o quiz
+        if quantPessoas == 0:
+            ConclusaoQuiz = 0
+            naoConclusaoQuiz = 0
+        else :  
+            ConclusaoQuiz = round(float(100 * int(quantQuizCompletados) / int(quantPessoas)),2)
+            naoConclusaoQuiz = round(float(100 * int(quantQuizNaoCompletados) / int(quantPessoas)),2)
 
+        mensagemRelatorio.append(nome + ", vamos lá para o resultado final do questionário:")
+        mensagemRelatorio.append("A porcentagem de aluno que concluiu o questionario foi de "+ str(ConclusaoQuiz)+"% e as que não concluiu foi de "+ str(naoConclusaoQuiz)+"%")
+        
         for numero in questoes:
             
             if quantRespostaPergunta[numero] != 0 :
     
                 if respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto'] != 0:
-                    porcetagemAcerto = float(int(quantRespostaPergunta[numero]) / int(respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto'])* 100)
+                    porcetagemAcerto = round(float(  100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto']) / int(quantRespostaPergunta[numero])),2)
                 else:
                      porcetagemAcerto = 0 
 
                 if respostas["pergunta"+ str(numero)+"_cotas"]['quantErros'] != 0:
-                    porcetagemErros = float(int(quantRespostaPergunta[numero]) / int(respostas["pergunta"+ str(numero)+"_cotas"]['quantErros'])* 100) 
+                    porcetagemErros = round(float( 100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantErros']) / int(quantRespostaPergunta[numero])),2) 
                 else:
                     porcetagemErros = 0
 
@@ -241,7 +264,7 @@ if __name__ == "__main__":
     # ABRIR WhatsApp 
     WhatsappBot = WhatsappBot()
     time.sleep(10)
-    alunos = ["Wesley"]
+    alunos = ["Felipe Vilella"]
      
     #Abrir dialogFlow
     WhatsappBot.abrirAba()
