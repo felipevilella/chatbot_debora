@@ -86,7 +86,7 @@ class quiz:
             if quantRespostaPergunta[numero] != 0 :
     
                 if respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto'] != 0:
-                    porcetagemAcerto = round(float(  100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto']) / int(quantRespostaPergunta[numero])),2)
+                    porcetagemAcerto = round(float(100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto']) / int(quantRespostaPergunta[numero])),2)
                 else:
                      porcetagemAcerto = 0 
 
@@ -159,11 +159,11 @@ class quiz:
                     quantidade = quantidade + 1
    
             if int(quantAcerto) == int(totalQuestao):
-                mensagem.append("Parabéns , você acertou " + str(quantAcerto) + "/"+ str(totalQuestao) +" das questões")
+                mensagem.append("Parabéns , você acertou " + str(quantAcerto) + " das "+ str(totalQuestao) +" das questões")
             elif int(quantAcerto) == int(totalQuestao) - 1:
-                mensagem.append("Você foi bem, acertou " + str(quantAcerto) + "/"+ str(totalQuestao) + " das questões, mas o importante e sempre estudar para conseguir melhorar ainda mais ;-)")
+                mensagem.append("Você foi bem, acertou " + str(quantAcerto) + " das "+ str(totalQuestao) + " das questões, mas o importante e sempre estudar para conseguir melhorar ainda mais ;-)")
             else:
-                mensagem.append("Que pena, você acertou "+ str(quantAcerto) + "/"+ str(totalQuestao) + " das questões, mas sabia que para ter sucesso é falhar repetidamente, mas sem perder o entusiasmo.  ;-)")
+                mensagem.append("Que pena, você acertou "+ str(quantAcerto) + " das "+ str(totalQuestao) + " das questões, mas sabia que para ter sucesso é falhar repetidamente, mas sem perder o entusiasmo.  ;-)")
             
             return mensagem    
 
