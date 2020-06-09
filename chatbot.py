@@ -2,8 +2,8 @@ from selenium import webdriver
 from random import randrange
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-from firebase_debora import firebase_debora
-from filtro_bot import filtro_bot
+from quiz import quiz
+
 import time, re
 
 class WhatsappBot:
@@ -124,143 +124,10 @@ class WhatsappBot:
             time.sleep(2)
         except NoSuchElementException:
             pass
-    
-    def analisarPerguntaResposta(self, resposta, nome):
-        # Firebase
-        firebase = firebase_debora()
-        gabarito = firebase.getGabarito()
-        bancoRespostas = firebase.getRespostas()
-        alunos = firebase.getAlunos()
-
-        # Instanciar a classe de filtro
-        filtro = filtro_bot()
-
-        perguntas = [1,2,3]
-
-        for num in perguntas:
-            tipo1 = re.findall(str(num) +'\)', resposta)
-            tipo2 = re.findall(str(num) +" ", resposta)
-            tipo3 = re.findall(str(num) +"-", resposta)
-                
-            if tipo1 or tipo2  or tipo3:
-                respostaPergunta = filtro.filtraRespostaAluno(resposta, num)
-        
-                if respostaPergunta == gabarito['cotas'][num].lower():
-                    totalAcerto = int(bancoRespostas['pergunta'+ str(num) +'_cotas']['quantAcerto'])
-                    totalAcerto = totalAcerto + 1
-                    firebase.atualizarRespostas("pergunta"+ str(num) +"_cotas", "quantAcerto", totalAcerto)
-                    correcao = "acertou"
-                else:
-                    totalErro = int(bancoRespostas['pergunta'+ str(num )+ '_cotas']['quantErros'])
-                    totalErro = totalErro + 1
-                    firebase.atualizarRespostas("pergunta"+ str(num) + "_cotas", "quantErros", totalErro)
-                    correcao = "errou"
-              
-                for key in alunos:
-                    if alunos[key]['nome'] == nome:
-                        firebase.atualizarSituacaoAluno(key, "pergunta_"+ str(num), correcao)
-
-    def gerarRelatorio(self, nome):
-        firebase = firebase_debora()
-        alunos = firebase.getAlunos()
-
-        quantRespostaPergunta = ["", 0 , 0, 0]
-        quantQuizCompletados = 0
-        quantQuizNaoCompletados = 0
-        quantPessoas = 0
-        mensagemRelatorio = []
-
-        for key in alunos:
-
-            # obter o total de respostas respondidas
-            if alunos[key]['pergunta_1'] != 'Não realizado' and alunos[key]['pergunta_2'] != 'Não realizado' and alunos[key]['pergunta_3'] != 'Não realizado':
-                quantQuizCompletados = quantQuizCompletados + 1
-            else: 
-                quantQuizNaoCompletados = quantQuizNaoCompletados + 1
-
-            # obter a quantidade de respostas por questão
-            if alunos[key]['pergunta_1'] != 'Não realizado':
-                quantRespostaPergunta[1] = quantRespostaPergunta[1] + 1
-            if alunos[key]['pergunta_2'] != 'Não realizado':
-                quantRespostaPergunta[2] = quantRespostaPergunta[2] + 1
-            if alunos[key]['pergunta_3'] != 'Não realizado':
-                quantRespostaPergunta[3] = quantRespostaPergunta[3] + 1
-
-            quantPessoas = quantPessoas + 1
-            
-        
-        respostas = firebase.getRespostas()
-        questoes = [1,2,3]
-
-        # porcentagem de pessoas que concluiram e não concluiram o quiz
-        if quantPessoas == 0:
-            ConclusaoQuiz = 0
-            naoConclusaoQuiz = 0
-        else :  
-            ConclusaoQuiz = round(float(100 * int(quantQuizCompletados) / int(quantPessoas)),2)
-            naoConclusaoQuiz = round(float(100 * int(quantQuizNaoCompletados) / int(quantPessoas)),2)
-
-        mensagemRelatorio.append(nome + ", vamos lá para o resultado final do questionário:")
-        mensagemRelatorio.append("A porcentagem de aluno que concluiu o quiz foi de "+ str(ConclusaoQuiz)+"% e as que não concluiu foi de "+ str(naoConclusaoQuiz)+"%")
-        
-        for numero in questoes:
-            
-            if quantRespostaPergunta[numero] != 0 :
-    
-                if respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto'] != 0:
-                    porcetagemAcerto = round(float(  100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantAcerto']) / int(quantRespostaPergunta[numero])),2)
-                else:
-                     porcetagemAcerto = 0 
-
-                if respostas["pergunta"+ str(numero)+"_cotas"]['quantErros'] != 0:
-                    porcetagemErros = round(float( 100 * int(respostas["pergunta"+ str(numero)+"_cotas"]['quantErros']) / int(quantRespostaPergunta[numero])),2) 
-                else:
-                    porcetagemErros = 0
-
-                mensagemRelatorio.append("O total de resposta da questão " + str(numero) + " foi de "+ str(quantRespostaPergunta[numero]) + ", onde a porcentagem de acerto é "+ str(porcetagemAcerto) +"% e de erro " + str(porcetagemErros) + "%")
-            else :
-                mensagemRelatorio.append("A questão "+str(numero)+ " ainda não obteve nenhuma resposta.")
-        
-        return mensagemRelatorio
-
-
-    def adicionarAluno(self, nome):
-        firebase = firebase_debora()
-        alunos = firebase.getAlunos()
-        
-        alunoRegistrado = False
-        
-        for key in alunos:
-            if alunos[key]['nome'] == nome:
-                alunoRegistrado = True
-
-        if alunoRegistrado == False:
-            dados = {
-                'nome': nome,
-                'pergunta_1': 'Não realizado',
-                'pergunta_2': 'Não realizado',
-                'pergunta_3': 'Não realizado'
-            }
-
-            firebase.salvarRespostasAluno(dados)
-    
-    def verificaQuestionarioRespondido(self, nome) :
-        firebase = firebase_debora()
-        alunos = firebase.getAlunos()
-              
-        for key in alunos:
-            if alunos[key]['nome'] == nome:
-                if alunos[key]['pergunta_1'] == "Não realizado":
-                   return ['alert',"#pergunta1", aluno+", vamos começar do inicio ;-) ? me envie *#topronto*"]
-                elif alunos[key]['pergunta_2'] == "Não realizado":
-                    return ['alert',"#pergunta2", aluno+", vi aqui e você parou na pergunta 2, bora continuar ;-) ? me envie *#pergunta2*"]
-                elif alunos[key]['pergunta_3'] == "Não realizado":
-                    return ['alert',"#pergunta3", aluno+", vi aqui e você parou na pergunta 3, bora continuar ;-) ? me envie *#pergunta3*"]
-                else:
-                    return ['success', nome+", você já completou o questionario :-) , no momento só posso tirar dúvidas"]
-
 
 if __name__ == "__main__":
+    quiz = quiz()
+
     # ABRIR WhatsApp 
     WhatsappBot = WhatsappBot()
     time.sleep(10)
@@ -270,6 +137,8 @@ if __name__ == "__main__":
     WhatsappBot.abrirAba()
     WhatsappBot.loginDialogFlow()
     time.sleep(10)
+
+    
 
     WhatsappBot.mudarAbaWhatssap()
     time.sleep(3)
@@ -299,8 +168,8 @@ if __name__ == "__main__":
                         liberarConversa = True                    
                         if mensagem[2] == "#topronto" or mensagem[2] == "#pergunta2" or mensagem[2] == "#pergunta3":
                             
-                            WhatsappBot.adicionarAluno(aluno)
-                            questionario = WhatsappBot.verificaQuestionarioRespondido(aluno)
+                            quiz.adicionarAluno(aluno)
+                            questionario = quiz.verificaQuestionarioRespondido(aluno)
 
                             if questionario[0] == "alert":
                                 if questionario[1] == "#pergunta1" and "#topronto" != mensagem[2]:
@@ -316,14 +185,14 @@ if __name__ == "__main__":
                                     liberarConversa = False
                             
                             elif questionario[0] == "success":
-                                WhatsappBot.enviarMensagem(questionario[1])
+                                WhatsappBot.enviarMensagem(questionario[2])
                                 liberarConversa = False
 
                         # Gerar Relatorio
                         relatorio = re.findall('#relatorio', mensagem[2])
 
                         if relatorio:
-                            mensagemRelatorio = WhatsappBot.gerarRelatorio(aluno)
+                            mensagemRelatorio = quiz.gerarRelatorio(aluno)
                             
                             for mensagem in mensagemRelatorio :  
                                 WhatsappBot.enviarMensagem(mensagem)
@@ -333,7 +202,7 @@ if __name__ == "__main__":
 
                         if liberarConversa:                          
                             # Analisar pergunta de quiz
-                            WhatsappBot.analisarPerguntaResposta(mensagem[2], aluno)
+                            quiz.analisarPerguntaResposta(mensagem[2], aluno)
                             
                             WhatsappBot.mudarAbaDialogFlow()
                             time.sleep(2)
@@ -350,6 +219,17 @@ if __name__ == "__main__":
                                     WhatsappBot.enviarGif(mensagemRobo)
                                 else:
                                     WhatsappBot.enviarMensagem(mensagemRobo)
+
+                                    # verifica se o aluno completou o questionario e retorna o resultado final
+                                    finalQuestionario = re.findall("até a próxima aula", mensagemRobo)
+                                                                       
+                                    if finalQuestionario:
+                                        mensagens = quiz.relatorioAluno(aluno, 3)
+                                        
+                                        for mensagem in mensagens:
+                                            WhatsappBot.enviarMensagem(mensagem)
+                                            time.sleep(1)
+
                                 time.sleep(1)
                             
                     else:
